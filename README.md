@@ -55,6 +55,12 @@
     ```bash
     docker cp kafka_producer.py kafka:/kafka_producer.py
     docker cp spark_kafka_hdfs.py spark-master:/spark_kafka_hdfs.py
+
+- Create kafka topic:
+
+    ```bash
+    docker exec -it kafka kafka-topics.sh --create --topic image_topic \
+    --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
     ```
 
 - Run spark job first for listening to kafka topic:
