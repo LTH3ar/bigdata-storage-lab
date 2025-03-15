@@ -1,3 +1,5 @@
 pyspark
 kafka-python
 hdfs
+torch
+transformers
