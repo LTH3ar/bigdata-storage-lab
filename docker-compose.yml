@@ -93,9 +93,28 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.8
 
+  t5-search:
+    build:
+      context: .
+      dockerfile: Dockerfile.search
+    container_name: t5-search
+    depends_on:
+      - spark-master  # đảm bảo dữ liệu (CSV chứa caption) đã được tạo ra
+    volumes:
+      - ./results.csv:/data/results.csv
+    environment:
+      - SEARCH_QUERY=biển xanh
+      - CSV_PATH=/data/results.csv
+      - TOP_RESULTS=5
+    command: [ "python", "t5_image_search.py", "$SEARCH_QUERY", "--csv", "$CSV_PATH", "--top", "$TOP_RESULTS" ]
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.9
+
 networks:
   hdfs_network:
     ipam:
       driver: default
       config:
         - subnet: 172.20.0.0/16
+
