@@ -1,0 +1,15 @@
+# Dockerfile.search
+FROM python:3.8-slim
+
+# Cài đặt các gói cần thiết
+RUN pip install torch transformers
+
+# Copy file t5_image_search.py vào container
+COPY t5_image_search.py /app/t5_image_search.py
+
+# Copy file CSV chứa caption (ví dụ: results.csv hoặc captions.csv)
+# Nếu file này được tạo ra từ bước trước, bạn có thể mount nó từ host
+WORKDIR /app
+
+# Khi container chạy, nó sẽ chạy file t5_image_search.py với tham số được cung cấp qua biến môi trường
+CMD ["python", "t5_image_search.py"]
