@@ -111,10 +111,31 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.9
 
+  resnet-search:
+    build:
+      context: .
+      dockerfile: Dockerfile.search
+    container_name: resnet-search
+    depends_on:
+      - spark-master
+    volumes:
+      - ./flickr30k_images:/data/images
+      # Giả sử bạn có một ảnh query test tên query.jpg trong thư mục gốc
+      - ./query.jpg:/data/query.jpg
+    environment:
+      - QUERY_IMAGE=/data/query.jpg
+      - IMAGES_DIR=/data/images
+      - TOP_RESULTS=5
+    command: [ "python", "resnet_image_search.py", "--query", "$QUERY_IMAGE", "--images_dir", "$IMAGES_DIR", "--top", "$TOP_RESULTS" ]
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.10
+
 networks:
   hdfs_network:
     ipam:
       driver: default
       config:
         - subnet: 172.20.0.0/16
+
 
