@@ -74,7 +74,7 @@
 - Run kafka producer this will send the data to kafka topic:
 
     ```bash
-    docker exec -it kafka python3 /kafka_producer.py
+    docker exec -it kafka python /kafka_producer.py
     ```
 
 - Check the data in hdfs:
