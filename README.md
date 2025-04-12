@@ -101,7 +101,7 @@
 
 - Khi container t5-search khởi động, nó tự động chạy lệnh:
   ```bash
-  python t5_image_search.py "$SEARCH_QUERY" --csv "$CSV_PATH" --top "$TOP_RESULTS"
+  sh -c "python t5_image_search.py \"$SEARCH_QUERY\" --csv \"$CSV_PATH\" --top \"$TOP_RESULTS\""
   ```
 - Để kiểm tra kết quả tìm kiếm, bạn có thể xem log của container:
 
