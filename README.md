@@ -90,7 +90,7 @@
     ```
   Chạy bước tìm kiếm ảnh:
 
-- Trong file docker-compose.yml, service t5-search đã được định nghĩa với các biến môi trường:
+- Service t5-search đã được định nghĩa sử dụng các biến môi trường từ file .env và có entrypoint chờ cho đến khi file CSV (results.csv) có dữ liệu. Cụ thể:
     ```bash
     SEARCH_QUERY (ví dụ: "biển xanh")
 
