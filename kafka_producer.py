@@ -3,7 +3,7 @@
 from kafka import KafkaProducer
 import os
 
-KAFKA_TOPIC = "image_topic"
+KAFKA_TOPIC = "caption_topic"
 KAFKA_SERVER = "kafka:9092"
 IMAGE_FOLDER = "/data/images"
 
