@@ -1,114 +1,62 @@
-# bigdata-storage-lab
+# Big Data Pipeline - Tìm Ảnh qua Caption với T5
 
-## 1. Description
+## Cách Triển khai và Chạy
 
-- This is just a basic kafka - zookeeper - spark - hdfs stack for big data storage lab.
-- The dataset use in this lab is flickr30k dataset from kaggle.
-- The process is as follows:
-  - Kafka: Producer reads the dataset and sends it to the kafka topic.
-  - Zookeeper: Kafka uses zookeeper to manage the kafka brokers.
-  - Spark: Spark reads the data from kafka topic and processes it.
-  - HDFS: Spark writes the processed data to hdfs.
-- The data is stored in hdfs in parquet format.
-
-## 2. Requirements
-
-- Docker
-- Docker-compose
-- Python
-
-## 3. How to run
-
-- Clone the repository:
-
-    ```bash
-    git clone https://github.com/LTH3ar/bigdata-storage-lab.git
-    cd bigdata-storage-lab
-    ```
-
-- Build the docker images:
-
-    ```bash
-    docker build -f dockerfile.kafka -t kafka:lab .
-    docker build -f dockerfile.spark -t spark:lab .
-    ```
-
-- Download the dataset:
-
-    ```bash
-    #!/bin/bash
-    curl -L -o ~/Downloads/flickr-image-dataset.zip\
-    https://www.kaggle.com/api/v1/datasets/download/hsankesara/flickr-image-dataset
-    ```
-
-- Extract the dataset and make sure the folder `flickr30k_images` and `results.csv` are in the same directory as the docker-compose.yml file.
-- There are possible duplicated flickr30k folder in the dataset, make sure to remove the duplicated folder.
-
-- Run the docker-compose:
-
-    ```bash
-    docker compose up -d
-    ```
-
-- Copy file to kafka and spark container:
-
-    ```bash
-    docker cp kafka_producer.py kafka:/kafka_producer.py
-    docker cp spark_kafka_hdfs.py spark-master:/spark_kafka_hdfs.py
-
-- Create kafka topic:
-
-    ```bash
-    docker exec -it kafka kafka-topics.sh --create --topic image_topic \
-    --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
-    ```
-
-- Run spark job first for listening to kafka topic:
-
-    ```bash
-    docker exec -it spark-master spark-submit \
-  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
-  /spark_kafka_hdfs.py
-    ```
-
-- Run kafka producer this will send the data to kafka topic:
-
-    ```bash
-    docker exec -it kafka python3 /kafka_producer.py
-    ```
-
-- Check the data in hdfs:
-
-    ```bash
-    docker exec -it namenode hdfs dfs -ls /raw_images
-    ```
-
-- To stop the services:
-
-    ```bash
-    docker compose down -v
-    ```
-  Chạy bước tìm kiếm ảnh:
-
-- Service t5-search đã được định nghĩa sử dụng các biến môi trường từ file .env và có entrypoint chờ cho đến khi file CSV (results.csv) có dữ liệu. Cụ thể:
-    ```bash
-    SEARCH_QUERY (ví dụ: "biển xanh")
-
-    CSV_PATH (đường dẫn đến file CSV chứa caption, ví dụ: /data/results.csv)
-
-    TOP_RESULTS (số lượng kết quả hiển thị, ví dụ: 5)
-    ```
-
-- Khi container t5-search khởi động, nó tự động chạy lệnh:
+### 1. Chuẩn bị
+- Docker và Docker Compose đã cài trên máy.
+- Clone repository và đảm bảo có đầy đủ thư mục:
   ```bash
-  python t5_image_search.py "$SEARCH_QUERY" --csv "$CSV_PATH" --top "$TOP_RESULTS"
+  git clone <repo_url>
+  cd project-root
   ```
-- Để kiểm tra kết quả tìm kiếm, bạn có thể xem log của container:
+- Copy dữ liệu `flickr30k_images/` và file `results.csv` vào thư mục `data/`
 
-  ```bash
-  docker logs t5-search
-  ```
+### 2. Khởi động hệ thống
+```bash
+docker-compose up -d
+```
 
-- Available UIs:
-  - Spark: http://localhost:8080
-  - HDFS: http://localhost:9870
+### 3. Đưa dữ liệu lên HDFS
+```bash
+docker-compose run --rm hadoop-init
+```
+
+### 4. Gửi caption lên Kafka
+```bash
+docker-compose up -d producer
+```
+
+### 5. Chạy Spark job tính embedding caption
+```bash
+docker-compose exec spark-master spark-submit \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 \
+  /opt/app/caption_embedding_job.py
+```
+
+### 6. Gửi truy vấn caption (Search)
+```bash
+docker-compose run --rm search-producer python search_producer.py "a man riding a horse"
+```
+
+### 7. Chạy Spark job tìm kiếm theo truy vấn
+```bash
+docker-compose exec spark-master spark-submit \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 \
+  /opt/app/query_job.py
+```
+
+### 8. Xem kết qủa tìm kiếm
+```bash
+docker-compose exec kafka kafka-console-consumer.sh \
+  --bootstrap-server kafka:9092 \
+  --topic SearchResults --from-beginning
+```
+
+---
+
+## Tóm tắt
+- Caption được streaming từ file `results.csv` lên Kafka topic `Captions`.
+- Spark Structured Streaming nhận và nhớ caption, tính embedding bằng T5, lưu vào HDFS.
+- Spark job khác stream truy vấn từ Kafka topic `SearchQueries`, tính embedding và so khớp cosine similarity.
+- Top-5 kế tủa tìm kiếm được đẩy lên topic `SearchResults`.
+
