@@ -3,11 +3,19 @@ import json
 import torch
 from transformers import T5Tokenizer, T5EncoderModel
 import torch.nn.functional as F
+from dotenv import load_dotenv
+import os
+
+# Tải biến môi trường từ file .env
+load_dotenv()
 
 KAFKA_SERVER = "kafka:9092"
 IMAGE_TOPIC = "image_topic"
 CAPTION_TOPIC = "caption_topic"
 TOP_RESULTS = 5
+
+# Lấy query từ .env
+QUERY = os.getenv("QUERY", "biển xanh")  # Mặc định là "biển xanh" nếu không có trong .env
 
 # Tải mô hình và tokenizer T5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,9 +64,10 @@ def process_stream():
         # Tính embedding cho caption
         caption_embedding = compute_embedding(caption_text, tokenizer, model, device)
         
-        # Tính độ tương đồng với query (Giả sử đã có query từ môi trường)
-        query_embedding = compute_embedding("biển xanh", tokenizer, model, device)  # Đổi "biển xanh" theo yêu cầu
+        # Tính embedding cho query từ .env
+        query_embedding = compute_embedding(QUERY, tokenizer, model, device)
 
+        # Tính độ tương đồng với query
         similarity = F.cosine_similarity(query_embedding, caption_embedding, dim=0).item()
 
         print(f"Image: {image_name} - Caption: {caption_text} - Độ tương đồng: {similarity:.4f}")
@@ -66,8 +75,4 @@ def process_stream():
 if __name__ == "__main__":
     process_stream()
 
-
-
-if __name__ == "__main__":
-    main()
 
