@@ -31,6 +31,7 @@
     ```bash
     docker build -f dockerfile.kafka -t kafka:lab .
     docker build -f dockerfile.spark -t spark:lab .
+
     ```
 
 - Download the dataset:
@@ -82,32 +83,35 @@
     ```bash
     docker exec -it namenode hdfs dfs -ls /raw_images
     ```
+- Run image search
+   - The t5-search service is preconfigured in docker-compose.yml and will automatically start once other services are up.
+
+   - It consumes captions from the Kafka topic and performs semantic search with a user-defined query.
+
+- Environment variables used (defined in .env):
+    ```bash
+    SEARCH_QUERY="biển xanh"
+    KAFKA_TOPIC="caption_topic"
+    KAFKA_SERVER="kafka:9092"
+    TOP_RESULTS=5
+    ```
+- When the container starts, it automatically runs:
+    ```bash
+    python t5_image_search.py "$SEARCH_QUERY" --top "$TOP_RESULTS" --topic "$KAFKA_TOPIC" --kafka "$KAFKA_SERVER"
+    ```
+- To check the search results:
+
+    ```bash
+    docker logs t5-search
+    ```
+
 
 - To stop the services:
 
     ```bash
     docker compose down -v
     ```
-  Chạy bước tìm kiếm ảnh:
-
-- Trong file docker-compose.yml, service t5-search đã được định nghĩa với các biến môi trường:
-    ```bash
-    SEARCH_QUERY (ví dụ: "biển xanh")
-
-    CSV_PATH (đường dẫn đến file CSV chứa caption, ví dụ: /data/results.csv)
-
-    TOP_RESULTS (số lượng kết quả hiển thị, ví dụ: 5)
-    ```
-
-- Khi container t5-search khởi động, nó tự động chạy lệnh:
-  ```bash
-  python t5_image_search.py "$SEARCH_QUERY" --csv "$CSV_PATH" --top "$TOP_RESULTS"
-  ```
-- Để kiểm tra kết quả tìm kiếm, bạn có thể xem log của container:
-
-  ```bash
-  docker logs t5-search
-  ```
+  
 
 - Available UIs:
   - Spark: http://localhost:8080
