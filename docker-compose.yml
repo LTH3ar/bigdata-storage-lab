@@ -39,6 +39,43 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.3
 
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.5
+
+  spark-master:
+    image: spark:lab
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - NODE_TYPE=master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.7
+
+  spark-worker:
+    image: spark:lab
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - NODE_TYPE=worker
+    depends_on:
+      - spark-master
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.8
+
   kafka:
     image: kafka:lab
     container_name: kafka
@@ -51,6 +88,9 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
     ports:
       - "9092:9092"
+    volumes:
+      - ./flickr30k_images:/data/images
+      - ./results.csv:/data/results.csv
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.6
@@ -58,6 +98,7 @@ services:
   t5-search:
     build:
       context: .
+      dockerfile: Dockerfile.search
     container_name: t5-search
     depends_on:
       - spark-master
@@ -69,35 +110,6 @@ services:
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.9
-    environment:
-      - KAFKA_SERVER=kafka:9092  # Đảm bảo t5-search có thể kết nối đến Kafka
-      - KAFKA_IMAGE_TOPIC=image_topic
-      - KAFKA_CAPTION_TOPIC=caption_topic
-    # Thêm bất kỳ biến môi trường nào cần thiết cho t5-search
-
-  spark-master:
-    image: bitnami/spark:latest
-    container_name: spark-master
-    environment:
-      - SPARK_MODE=master
-    ports:
-      - "8080:8080"
-      - "7077:7077"
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.7
-
-  spark-worker:
-    image: bitnami/spark:latest
-    container_name: spark-worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-    depends_on:
-      - spark-master
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.8
 
 networks:
   hdfs_network:
@@ -105,9 +117,6 @@ networks:
       driver: default
       config:
         - subnet: 172.20.0.0/16
-
-
-
 
 
 
