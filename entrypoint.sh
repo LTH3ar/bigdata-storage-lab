@@ -1,13 +1,23 @@
 #!/bin/bash
 set -e
 
-echo "[t5-search] Đang đợi file CSV: $CSV_PATH"
+# Đường dẫn file caption trên HDFS (điều này phải khớp với file được ghi bởi Spark hoặc một job tương tự)
+HDFS_CAPTIONS_PATH="/captions/captions.csv"
 
-# Chờ file CSV có kích thước > 0 (có dữ liệu)
-while [ ! -s "$CSV_PATH" ]; do
-  echo "[t5-search] CSV chưa có dữ liệu. Chờ 5 giây..."
-  sleep 5
+echo "[t5-search] Đang kiểm tra dữ liệu captions trên HDFS tại $HDFS_CAPTIONS_PATH..."
+
+# Kiểm tra xem file captions đã tồn tại trên HDFS hay chưa.
+# Lệnh 'hdfs dfs -test -e' sẽ trả về 0 nếu file tồn tại.
+while true; do
+  if hdfs dfs -test -e $HDFS_CAPTIONS_PATH; then
+    echo "[t5-search] Tìm thấy file captions trên HDFS."
+    break
+  else
+    echo "[t5-search] Chưa tìm thấy file captions trên HDFS, chờ 5 giây..."
+    sleep 5
+  fi
 done
 
-echo "[t5-search] CSV đã sẵn sàng. Bắt đầu tìm kiếm với từ khóa: $SEARCH_QUERY"
-exec python t5_image_search.py "$SEARCH_QUERY" --csv "$CSV_PATH" --top "$TOP_RESULTS"
+echo "[t5-search] Bắt đầu tìm kiếm với từ khóa: $SEARCH_QUERY"
+exec python t5_image_search.py "$SEARCH_QUERY" --top "$TOP_RESULTS"
+
