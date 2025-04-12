@@ -1,15 +1,18 @@
 # Dockerfile.search
 FROM python:3.8-slim
 
-# Cài đặt các gói cần thiết: torch, transformers, torchvision và pillow
-RUN pip install torch transformers torchvision pillow
+# Cài đặt các gói cần thiết cho search (có thể thêm nếu cần)
+RUN pip install --no-cache-dir pyspark kafka-python hdfs
 
-# Copy các file search vào container
+# Copy các file source vào container
 COPY t5_image_search.py /app/t5_image_search.py
-COPY resnet_image_search.py /app/resnet_image_search.py
+
+# Copy entrypoint script cho t5-search
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 WORKDIR /app
 
-# Mặc định chạy t5_image_search.py, có thể override CMD khi cần chạy resnet_image_search.py
+# Command mặc định có thể override bởi docker-compose.yml
 CMD ["python", "t5_image_search.py"]
 
