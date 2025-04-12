@@ -2,41 +2,53 @@
 """
 File: t5_image_search.py
 Mô tả: Tìm kiếm ảnh thông qua caption sử dụng mô hình T5.
+Phiên bản mới tích hợp với pipeline Big Data, thay vì đọc file CSV cục bộ thì lấy dữ liệu caption từ HDFS.
 Có thể nhận tham số từ dòng lệnh hoặc qua biến môi trường:
     - SEARCH_QUERY: từ khóa tìm kiếm (nếu không truyền qua dòng lệnh)
-    - CSV_PATH: đường dẫn file CSV chứa caption (mặc định là captions.csv)
+    - HDFS_CAPTIONS_PATH: đường dẫn trên HDFS chứa file CSV caption (mặc định là /captions/captions.csv)
     - TOP_RESULTS: số lượng kết quả hiển thị (mặc định là 5)
 Usage:
-    python t5_image_search.py "từ khóa tìm kiếm" --csv captions.csv --top 5
+    python t5_image_search.py "từ khóa tìm kiếm" --top 5
 Ví dụ:
-    python t5_image_search.py "biển xanh" --csv captions.csv --top 5
+    python t5_image_search.py "biển xanh" --top 5
 """
 
 import argparse
 import csv
 import os
 import sys
-from pathlib import Path
+import tempfile
 
 import torch
 import torch.nn.functional as F
 from transformers import T5Tokenizer, T5EncoderModel
 
-def load_captions(csv_path):
+# Sử dụng thư viện hdfs để download file từ HDFS thông qua WebHDFS (port mặc định của Namenode UI là 9870)
+from hdfs import InsecureClient
+
+
+def load_captions_from_hdfs(hdfs_path):
     """
-    Đọc file CSV và trả về danh sách các bản ghi chứa thông tin ảnh.
+    Kết nối với HDFS và tải file CSV chứa caption về tạm (local) rồi đọc nội dung.
     Mỗi bản ghi là một dict với các khóa: 'image' và 'caption'.
     """
-    captions = []
     try:
-        with open(csv_path, newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
+        # Kết nối với HDFS (đảm bảo hostname 'namenode' được định danh trong mạng của docker-compose)
+        client = InsecureClient("http://namenode:9870", user="hadoop")
+        with tempfile.NamedTemporaryFile(mode="r+", delete=False, encoding='utf-8') as tmpfile:
+            # Tải file từ HDFS về file tạm
+            client.download(hdfs_path, tmpfile.name, overwrite=True)
+            tmpfile.flush()
+            tmpfile.seek(0)
+            captions = []
+            reader = csv.DictReader(tmpfile)
             for row in reader:
                 captions.append(row)
+        return captions
     except Exception as e:
-        print(f"Lỗi khi đọc file CSV: {e}")
+        print(f"Lỗi khi tải file từ HDFS ({hdfs_path}): {e}")
         sys.exit(1)
-    return captions
+
 
 def compute_embedding(text, tokenizer, model, device):
     """
@@ -54,15 +66,17 @@ def compute_embedding(text, tokenizer, model, device):
     avg_embedding = sum_embeddings / sum_mask
     return avg_embedding.squeeze(0)
 
+
 def main():
     # Lấy giá trị mặc định từ biến môi trường nếu có
     default_query = os.environ.get("SEARCH_QUERY")
-    default_csv_path = os.environ.get("CSV_PATH", "captions.csv")
+    default_hdfs_path = os.environ.get("HDFS_CAPTIONS_PATH", "/captions/captions.csv")
     default_top = os.environ.get("TOP_RESULTS", "5")
     
     parser = argparse.ArgumentParser(description="Tìm kiếm ảnh thông qua caption sử dụng T5")
     parser.add_argument("query", type=str, nargs="?", default=default_query, help="Caption hoặc từ khóa tìm kiếm")
-    parser.add_argument("--csv", type=str, default=default_csv_path, help="Đường dẫn tới file CSV chứa caption")
+    parser.add_argument("--csv", type=str, default=default_hdfs_path,
+                        help="Đường dẫn HDFS tới file CSV chứa caption (ví dụ: /captions/captions.csv)")
     parser.add_argument("--top", type=int, default=int(default_top), help="Số lượng ảnh kết quả hiển thị")
     args = parser.parse_args()
 
@@ -70,15 +84,11 @@ def main():
         print("Vui lòng cung cấp từ khóa tìm kiếm thông qua tham số dòng lệnh hoặc biến môi trường SEARCH_QUERY.")
         sys.exit(1)
 
-    csv_path = Path(args.csv)
-    if not csv_path.exists():
-        print(f"File {args.csv} không tồn tại!")
-        sys.exit(1)
-
-    # Đọc dữ liệu caption
-    captions = load_captions(csv_path)
+    # Tải dữ liệu caption từ HDFS
+    print(f"Đang tải file caption từ HDFS: {args.csv} ...")
+    captions = load_captions_from_hdfs(args.csv)
     if len(captions) == 0:
-        print("Không có caption nào trong file CSV.")
+        print("Không có caption nào được tải từ file trên HDFS.")
         sys.exit(0)
 
     # Thiết lập thiết bị: GPU nếu có, ngược lại sử dụng CPU
@@ -97,8 +107,8 @@ def main():
     results = []
     print("Đang tính độ tương đồng cho từng caption...")
     for item in captions:
-        caption_text = item['caption']
-        image_file = item['image']
+        caption_text = item.get('caption', '')
+        image_file = item.get('image', 'unknown')
         caption_embedding = compute_embedding(caption_text, tokenizer, model, device)
         similarity = F.cosine_similarity(query_embedding, caption_embedding, dim=0).item()
         results.append({
@@ -115,5 +125,7 @@ def main():
     for res in top_results:
         print(f"Image: {res['image']}\nCaption: {res['caption']}\nĐộ tương đồng: {res['similarity']:.4f}\n{'-'*40}")
 
+
 if __name__ == "__main__":
     main()
+
