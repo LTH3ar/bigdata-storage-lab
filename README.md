@@ -60,8 +60,9 @@
 - Create kafka topic:
 
     ```bash
-    docker exec -it kafka kafka-topics.sh --create --topic image_topic \
-    --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+    docker exec -it kafka kafka-topics.sh --create --topic caption_topic \
+  --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+
     ```
 
 - Run spark job first for listening to kafka topic:
@@ -70,6 +71,7 @@
     docker exec -it spark-master spark-submit \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
   /spark_kafka_hdfs.py
+
     ```
 
 - Run kafka producer this will send the data to kafka topic:
