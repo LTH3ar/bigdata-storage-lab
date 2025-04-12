@@ -74,6 +74,7 @@ services:
     container_name: spark-master
     environment:
       - SPARK_MODE=master
+      - NODE_TYPE=master
     ports:
       - "8080:8080"
       - "7077:7077"
@@ -87,6 +88,7 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
+      - NODE_TYPE=worker
     depends_on:
       - spark-master
     networks:
