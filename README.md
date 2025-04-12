@@ -95,14 +95,15 @@
 
 - Environment variables used (defined in .env):
     ```bash
-    SEARCH_QUERY="biển xanh"
-    KAFKA_TOPIC="caption_topic"
     KAFKA_SERVER="kafka:9092"
-    TOP_RESULTS=5
+    KAFKA_IMAGE_TOPIC="image_topic"
+    KAFKA_CAPTION_TOPIC="caption_topic"
+    QUERY="biển xanh"
+
     ```
 - When the container starts, it automatically runs:
     ```bash
-    python t5_image_search.py "$SEARCH_QUERY" --top "$TOP_RESULTS" --topic "$KAFKA_TOPIC" --kafka "$KAFKA_SERVER"
+    python t5_search.py --query "$QUERY" --image-topic "$KAFKA_IMAGE_TOPIC" --caption-topic "$KAFKA_CAPTION_TOPIC" --kafka "$KAFKA_SERVER"
     ```
 - To check the search results:
 
