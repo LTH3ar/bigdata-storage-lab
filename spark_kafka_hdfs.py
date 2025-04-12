@@ -2,7 +2,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
-KAFKA_TOPIC = "image_topic"
+KAFKA_TOPIC = "caption_topic"
 KAFKA_SERVER = "kafka:9092"
 HDFS_OUTPUT_PATH = "hdfs://namenode:9000/raw_images/"
 
