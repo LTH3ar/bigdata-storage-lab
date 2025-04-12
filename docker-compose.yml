@@ -99,7 +99,7 @@ services:
       dockerfile: Dockerfile.search
     container_name: t5-search
     depends_on:
-      - spark-master
+      - kafka
     volumes:
       - ./results.csv:/data/results.csv
     env_file:
@@ -115,6 +115,8 @@ networks:
       driver: default
       config:
         - subnet: 172.20.0.0/16
+
+
 
 
 
