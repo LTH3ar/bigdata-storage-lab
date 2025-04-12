@@ -12,8 +12,7 @@ services:
       - ./hadoop_namenode:/opt/hadoop/data/nameNode
       - ./hadoop_config:/opt/hadoop/etc/hadoop
       - ./start-hdfs.sh:/start-hdfs.sh
-      - ./flickr30k_images:/data/images
-      - ./results.csv:/data/results.csv
+      - ./BreaKHis_v1:/data/images
     ports:
       - "9870:9870"
     command: [ "/bin/bash", "/start-hdfs.sh" ]
@@ -39,6 +38,42 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.3
 
+  datanode2:
+    image: apache/hadoop:3.3.5
+    container_name: datanode2
+    hostname: datanode2
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+    volumes:
+      - ./hadoop_datanode2:/opt/hadoop/data/dataNode
+      - ./hadoop_config:/opt/hadoop/etc/hadoop
+      - ./init-datanode.sh:/init-datanode.sh
+    depends_on:
+      - namenode
+    command: [ "/bin/bash", "/init-datanode.sh" ]
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.11
+
+  datanode3:
+    image: apache/hadoop:3.3.5
+    container_name: datanode3
+    hostname: datanode3
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+    volumes:
+      - ./hadoop_datanode3:/opt/hadoop/data/dataNode
+      - ./hadoop_config:/opt/hadoop/etc/hadoop
+      - ./init-datanode.sh:/init-datanode.sh
+    depends_on:
+      - namenode
+    command: [ "/bin/bash", "/init-datanode.sh" ]
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.12
+
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
@@ -49,25 +84,6 @@ services:
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.5
-
-  # kafka:
-  #   image: kafka:lab
-  #   container_name: kafka
-  #   depends_on:
-  #     - zookeeper
-  #   environment:
-  #     - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-  #     - ALLOW_PLAINTEXT_LISTENER=yes
-  #     - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-  #     - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-  #   ports:
-  #     - "9092:9092"
-  #   volumes:
-  #     - ./flickr30k_images:/data/images
-  #     - ./results.csv:/data/results.csv
-  #   networks:
-  #     hdfs_network:
-  #       ipv4_address: 172.20.0.6
 
   spark-master:
     image: spark:lab
@@ -94,6 +110,32 @@ services:
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.8
+    
+  spark-worker2:
+    image: spark:lab
+    container_name: spark-worker2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - NODE_TYPE=worker
+    depends_on:
+      - spark-master
+    networks: 
+      hdfs_network:
+        ipv4_address: 172.20.0.9
+
+  spark-worker3:
+    image: spark:lab
+    container_name: spark-worker3
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - NODE_TYPE=worker
+    depends_on:
+      - spark-master
+    networks: 
+      hdfs_network:
+        ipv4_address: 172.20.0.10
 
   kafka:
     image: kafka:lab
@@ -108,27 +150,10 @@ services:
     ports:
       - "9092:9092"
     volumes:
-      - ./flickr30k_images:/data/images
-      - ./results.csv:/data/results.csv
+      - ./BreaKHis_v1:/data/images
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.6
-
-  t5-search:
-    build:
-      context: .
-      dockerfile: Dockerfile.search
-    container_name: t5-search
-    depends_on:
-      - spark-master
-    volumes:
-      - ./results.csv:/data/results.csv
-    env_file:
-      - .env
-    # command: [ "/entrypoint.sh" ]
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.9
 
 networks:
   hdfs_network:

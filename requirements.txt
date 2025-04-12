@@ -1,6 +1,7 @@
 pyspark
 kafka-python
 hdfs
-torch
-transformers
-SentencePiece
+# install PIL
+Pillow
+pandas
+numpy

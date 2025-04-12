@@ -66,7 +66,7 @@
 - Run spark job first for listening to kafka topic:
 
     ```bash
-    docker exec -it spark-master spark-submit \
+    docker exec -it spark-master spark-submit --master spark://c2b148bafdba:7077 \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
   /spark_kafka_hdfs.py
     ```
@@ -88,26 +88,6 @@
     ```bash
     docker compose down -v
     ```
-  Chạy bước tìm kiếm ảnh:
-
-- Trong file docker-compose.yml, service t5-search đã được định nghĩa với các biến môi trường:
-    ```bash
-    SEARCH_QUERY (ví dụ: "biển xanh")
-
-    CSV_PATH (đường dẫn đến file CSV chứa caption, ví dụ: /data/results.csv)
-
-    TOP_RESULTS (số lượng kết quả hiển thị, ví dụ: 5)
-    ```
-
-- Khi container t5-search khởi động, nó tự động chạy lệnh:
-  ```bash
-  python t5_image_search.py "$SEARCH_QUERY" --csv "$CSV_PATH" --top "$TOP_RESULTS"
-  ```
-- Để kiểm tra kết quả tìm kiếm, bạn có thể xem log của container:
-
-  ```bash
-  docker logs t5-search
-  ```
 
 - Available UIs:
   - Spark: http://localhost:8080
