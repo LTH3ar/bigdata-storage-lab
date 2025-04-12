@@ -40,7 +40,7 @@ services:
         ipv4_address: 172.20.0.3
 
   kafka:
-    image: bitnami/kafka:3.9.0-debian-12-r12
+    image: kafka:lab
     container_name: kafka
     depends_on:
       - zookeeper
