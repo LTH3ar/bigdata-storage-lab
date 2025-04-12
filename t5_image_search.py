@@ -97,8 +97,8 @@ def main():
     results = []
     print("Đang tính độ tương đồng cho từng caption...")
     for item in captions:
-        caption_text = item['caption']
-        image_file = item['image']
+        caption_text = item['comment']
+        image_file = item['image_name']
         caption_embedding = compute_embedding(caption_text, tokenizer, model, device)
         similarity = F.cosine_similarity(query_embedding, caption_embedding, dim=0).item()
         results.append({

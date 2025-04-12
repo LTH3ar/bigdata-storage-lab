@@ -7,6 +7,8 @@ RUN pip install --no-cache-dir pyspark kafka-python hdfs
 
 # Copy các file source vào container
 COPY t5_image_search.py /app/t5_image_search.py
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy entrypoint script cho t5-search
 COPY entrypoint.sh /entrypoint.sh
