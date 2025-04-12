@@ -106,7 +106,7 @@ services:
       - SEARCH_QUERY=biển xanh
       - CSV_PATH=/data/results.csv
       - TOP_RESULTS=5
-    command: [ "python", "t5_image_search.py", "$SEARCH_QUERY", "--csv", "$CSV_PATH", "--top", "$TOP_RESULTS" ]
+    command: sh -c "python t5_image_search.py \"$SEARCH_QUERY\" --csv \"$CSV_PATH\" --top \"$TOP_RESULTS\""
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.9
@@ -126,7 +126,7 @@ services:
       - QUERY_IMAGE=/data/query.jpg
       - IMAGES_DIR=/data/images
       - TOP_RESULTS=5
-    command: [ "python", "resnet_image_search.py", "--query", "$QUERY_IMAGE", "--images_dir", "$IMAGES_DIR", "--top", "$TOP_RESULTS" ]
+    command: sh -c "python resnet_image_search.py --query \"$QUERY_IMAGE\" --images_dir \"$IMAGES_DIR\" --top \"$TOP_RESULTS\""
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.10
