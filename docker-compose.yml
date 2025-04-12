@@ -39,19 +39,8 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.3
 
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    ports:
-      - "2181:2181"
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.5
-
   kafka:
-    image: kafka:lab
+    image: bitnami/kafka:3.9.0-debian-12-r12
     container_name: kafka
     depends_on:
       - zookeeper
@@ -62,15 +51,32 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
     ports:
       - "9092:9092"
-    volumes:
-      - ./flickr30k_images:/data/images
-      - ./results.csv:/data/results.csv
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.6
 
+  t5-search:
+    build:
+      context: .
+    container_name: t5-search
+    depends_on:
+      - spark-master
+    volumes:
+      - ./results.csv:/data/results.csv
+    env_file:
+      - .env
+    command: [ "/entrypoint.sh" ]
+    networks:
+      hdfs_network:
+        ipv4_address: 172.20.0.9
+    environment:
+      - KAFKA_SERVER=kafka:9092  # Đảm bảo t5-search có thể kết nối đến Kafka
+      - KAFKA_IMAGE_TOPIC=image_topic
+      - KAFKA_CAPTION_TOPIC=caption_topic
+    # Thêm bất kỳ biến môi trường nào cần thiết cho t5-search
+
   spark-master:
-    image: spark:lab
+    image: bitnami/spark:latest
     container_name: spark-master
     environment:
       - SPARK_MODE=master
@@ -82,7 +88,7 @@ services:
         ipv4_address: 172.20.0.7
 
   spark-worker:
-    image: spark:lab
+    image: bitnami/spark:latest
     container_name: spark-worker
     environment:
       - SPARK_MODE=worker
@@ -93,28 +99,13 @@ services:
       hdfs_network:
         ipv4_address: 172.20.0.8
 
-  t5-search:
-    build:
-      context: .
-      dockerfile: Dockerfile.search
-    container_name: t5-search
-    depends_on:
-      - kafka
-    volumes:
-      - ./results.csv:/data/results.csv
-    env_file:
-      - .env
-    command: [ "/entrypoint.sh" ]
-    networks:
-      hdfs_network:
-        ipv4_address: 172.20.0.9
-
 networks:
   hdfs_network:
     ipam:
       driver: default
       config:
         - subnet: 172.20.0.0/16
+
 
 
 
