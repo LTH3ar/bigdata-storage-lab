@@ -14,5 +14,5 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /app
 
 # Command mặc định có thể override bởi docker-compose.yml
-CMD ["python", "t5_image_search.py"]
+# CMD ["python", "t5_image_search.py"]
 
