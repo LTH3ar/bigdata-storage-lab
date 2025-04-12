@@ -125,7 +125,7 @@ services:
       - ./results.csv:/data/results.csv
     env_file:
       - .env
-    command: [ "/entrypoint.sh" ]
+    # command: [ "/entrypoint.sh" ]
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.9
