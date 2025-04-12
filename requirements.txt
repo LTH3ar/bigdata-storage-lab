@@ -4,3 +4,4 @@ hdfs
 torch
 transformers
 python-dotenv
+SentencePiece

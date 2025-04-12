@@ -6,6 +6,7 @@ RUN pip install --no-cache-dir pyspark kafka-python hdfs
 
 # Copy các file source vào container
 COPY t5_image_search.py /app/t5_image_search.py
+COPY requirements.txt /app/requirements.txt
 
 # Copy entrypoint script cho t5-search
 COPY entrypoint.sh /entrypoint.sh
@@ -14,5 +15,5 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /app
 
 # Command mặc định có thể override bởi docker-compose.yml
-CMD ["python", "t5_image_search.py"]
+#CMD ["python", "t5_image_search.py"]
 
