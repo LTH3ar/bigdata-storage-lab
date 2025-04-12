@@ -1,5 +1,6 @@
 # Dockerfile.search
-FROM python:3.8-slim
+FROM bitnami/spark:latest
+USER 0
 
 # Cài đặt các gói cần thiết cho search (có thể thêm nếu cần)
 RUN pip install --no-cache-dir pyspark kafka-python hdfs
