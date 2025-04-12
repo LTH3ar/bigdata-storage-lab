@@ -78,8 +78,6 @@ services:
     ports:
       - "8080:8080"
       - "7077:7077"
-    # run command to start the master
-    command: ["/bin/bash", "/spark_startup.sh"]
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.7
