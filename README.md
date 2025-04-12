@@ -45,23 +45,21 @@
 - Extract the dataset and make sure the folder `flickr30k_images` and `results.csv` are in the same directory as the docker-compose.yml file.
 - There are possible duplicated flickr30k folder in the dataset, make sure to remove the duplicated folder.
 
-- Run the docker-compose:
-
-    ```bash
-    docker compose up -d
-    ```
-
 - Copy file to kafka and spark container:
 
     ```bash
     docker cp kafka_producer.py kafka:/kafka_producer.py
     docker cp spark_kafka_hdfs.py spark-master:/spark_kafka_hdfs.py
+    docker cp t5_image_search.py t5-search:/t5_image_search.py
 
 - Create kafka topic:
 
     ```bash
     docker exec -it kafka kafka-topics.sh --create --topic caption_topic \
   --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+    docker exec -it kafka kafka-topics.sh --create --topic image_topic \
+  --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+
 
     ```
 
@@ -79,7 +77,12 @@
     ```bash
     docker exec -it kafka python /kafka_producer.py
     ```
+- Run the docker-compose:
 
+    ```bash
+    docker compose up -d
+    ```
+    
 - Check the data in hdfs:
 
     ```bash
