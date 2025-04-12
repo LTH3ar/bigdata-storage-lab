@@ -99,14 +99,13 @@ services:
       dockerfile: Dockerfile.search
     container_name: t5-search
     depends_on:
-      - spark-master  # đảm bảo dữ liệu (CSV chứa caption) đã được tạo ra
+      - spark-master
     volumes:
       - ./results.csv:/data/results.csv
-    environment:
-      - SEARCH_QUERY=biển xanh
-      - CSV_PATH=/data/results.csv
-      - TOP_RESULTS=5
-    command: sh -c "python t5_image_search.py \"$SEARCH_QUERY\" --csv \"$CSV_PATH\" --top \"$TOP_RESULTS\""
+    env_file:
+      - .env
+    command: >
+      sh -c "python t5_image_search.py \"$SEARCH_QUERY\" --csv \"$CSV_PATH\" --top \"$TOP_RESULTS\""
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.9
@@ -120,13 +119,11 @@ services:
       - spark-master
     volumes:
       - ./flickr30k_images:/data/images
-      # Giả sử bạn có một ảnh query test tên query.jpg trong thư mục gốc
       - ./query.jpg:/data/query.jpg
-    environment:
-      - QUERY_IMAGE=/data/query.jpg
-      - IMAGES_DIR=/data/images
-      - TOP_RESULTS=5
-    command: sh -c "python resnet_image_search.py --query \"$QUERY_IMAGE\" --images_dir \"$IMAGES_DIR\" --top \"$TOP_RESULTS\""
+    env_file:
+      - .env
+    command: >
+      sh -c "python resnet_image_search.py --query \"$QUERY_IMAGE\" --images_dir \"$IMAGES_DIR\" --top \"$TOP_RESULTS\""
     networks:
       hdfs_network:
         ipv4_address: 172.20.0.10
@@ -137,5 +134,6 @@ networks:
       driver: default
       config:
         - subnet: 172.20.0.0/16
+
 
 
