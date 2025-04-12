@@ -1,23 +1,25 @@
 #!/bin/bash
 set -e
 
-# Đường dẫn file caption trên HDFS (điều này phải khớp với file được ghi bởi Spark hoặc một job tương tự)
-HDFS_CAPTIONS_PATH="/captions/captions.csv"
+# Đọc các biến môi trường cần thiết (nếu có)
+: "${SEARCH_QUERY:?Vui lòng định nghĩa biến môi trường SEARCH_QUERY}"
+: "${KAFKA_SERVER:=kafka:9092}"
+: "${KAFKA_TOPIC:=caption_topic}"
+: "${TOP_RESULTS:=5}"
 
-echo "[t5-search] Đang kiểm tra dữ liệu captions trên HDFS tại $HDFS_CAPTIONS_PATH..."
+echo "[t5-search] Đang kiểm tra kết nối tới Kafka tại $KAFKA_SERVER ..."
 
-# Kiểm tra xem file captions đã tồn tại trên HDFS hay chưa.
-# Lệnh 'hdfs dfs -test -e' sẽ trả về 0 nếu file tồn tại.
-while true; do
-  if hdfs dfs -test -e $HDFS_CAPTIONS_PATH; then
-    echo "[t5-search] Tìm thấy file captions trên HDFS."
-    break
-  else
-    echo "[t5-search] Chưa tìm thấy file captions trên HDFS, chờ 5 giây..."
-    sleep 5
-  fi
-done
+# Nếu cần, có thể thêm kiểm tra (ví dụ dùng telnet hoặc nc) để đảm bảo Kafka server đã sẵn sàng.
+# Ví dụ:
+# until nc -z $(echo $KAFKA_SERVER | cut -d':' -f1) $(echo $KAFKA_SERVER | cut -d':' -f2); do
+#   echo "[t5-search] Chờ Kafka sẵn sàng..."
+#   sleep 5
+# done
+
+# Nếu không có cơ chế kiểm tra, ta dùng sleep tạm thời
+sleep 10
 
 echo "[t5-search] Bắt đầu tìm kiếm với từ khóa: $SEARCH_QUERY"
-exec python t5_image_search.py "$SEARCH_QUERY" --top "$TOP_RESULTS"
+exec python t5_image_search.py "$SEARCH_QUERY" --top "$TOP_RESULTS" --topic "$KAFKA_TOPIC" --kafka "$KAFKA_SERVER"
+
 
